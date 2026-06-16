@@ -1,0 +1,180 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 830 220" width="100%" height="100%" style="border-radius: 8px;">
+  <defs>
+    <!-- Cyan glow filter -->
+    <filter id="glow-c" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="5" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+    
+    <!-- Green glow filter -->
+    <filter id="glow-g" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="4" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+
+    <!-- Purple glow filter -->
+    <filter id="glow-p" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="6" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+
+    <!-- Subtle grid pattern -->
+    <pattern id="grid-pattern" width="30" height="30" patternUnits="userSpaceOnUse">
+      <path d="M 30 0 L 0 0 0 30" fill="none" stroke="#101524" stroke-width="1" />
+    </pattern>
+  </defs>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;700&amp;family=Orbitron:wght@600;800&amp;display=swap');
+    
+    .bg { fill: #07090e; }
+    .grid { fill: url(#grid-pattern); }
+    .panel { fill: #0b0f19; stroke: #1f2a45; stroke-width: 1.5; }
+    
+    /* Text styles */
+    .system-title { font-family: 'Orbitron', sans-serif; font-weight: 800; font-size: 24px; fill: #00ffcc; letter-spacing: 2px; filter: url(#glow-c); }
+    .sub-title { font-family: 'Fira Code', monospace; font-weight: 500; font-size: 10px; fill: #6366f1; letter-spacing: 5px; }
+    .terminal-text { font-family: 'Fira Code', monospace; fill: #a5b4fc; font-size: 12.5px; }
+    .terminal-prompt { font-family: 'Fira Code', monospace; fill: #38bdf8; font-size: 12.5px; font-weight: bold; }
+    .terminal-success { font-family: 'Fira Code', monospace; fill: #4ade80; font-size: 12.5px; font-weight: bold; filter: url(#glow-g); }
+    .server-label { font-family: 'Orbitron', sans-serif; font-size: 10px; fill: #6b7280; font-weight: 700; }
+    .server-val { font-family: 'Fira Code', monospace; font-size: 10px; fill: #38bdf8; }
+
+    /* Animations using CSS */
+    .cursor { font-family: 'Fira Code', monospace; fill: #00ffcc; font-size: 14px; animation: blink 1s step-end infinite; }
+    
+    .line1 { opacity: 0; animation: fadeIn 0.4s forwards; animation-delay: 0.5s; }
+    .line2 { opacity: 0; animation: fadeIn 0.4s forwards; animation-delay: 1.8s; }
+    .line3 { opacity: 0; animation: fadeIn 0.4s forwards; animation-delay: 3.1s; }
+    .line4 { opacity: 0; animation: fadeIn 0.4s forwards; animation-delay: 4.4s; }
+
+    @keyframes fadeIn {
+      to { opacity: 1; }
+    }
+    @keyframes blink {
+      from, to { opacity: 1; }
+      50% { opacity: 0; }
+    }
+  </style>
+
+  <!-- Background -->
+  <rect width="830" height="220" class="bg" />
+  <rect width="830" height="220" class="grid" />
+
+  <!-- Neon border top/bottom -->
+  <line x1="0" y1="0" x2="830" y2="0" stroke="#00ffcc" stroke-width="3" filter="url(#glow-c)" />
+  <line x1="0" y1="220" x2="830" y2="220" stroke="#6366f1" stroke-width="3" filter="url(#glow-p)" />
+
+  <!-- Left Sidebar: Database Cluster Graphics -->
+  <g transform="translate(10, 10)">
+    <!-- Container panel -->
+    <rect width="140" height="200" rx="6" class="panel" />
+    
+    <!-- Top glowing node -->
+    <circle cx="70" cy="35" r="5" fill="#4ade80" filter="url(#glow-g)">
+      <animate attributeName="opacity" values="0.3;1;0.3" dur="2s" repeatCount="indefinite" />
+    </circle>
+    <text x="70" y="52" text-anchor="middle" class="server-label">DB ENGINE</text>
+    <text x="70" y="65" text-anchor="middle" class="server-val">ORACLE 19C</text>
+
+    <!-- Animated DB Cylinders (Schema Graphic) -->
+    <g transform="translate(45, 85)">
+      <!-- Cylinder 1 -->
+      <path d="M5,10 A20,6 0 0,0 45,10 V30 A20,6 0 0,1 5,30 Z" fill="#1e293b" stroke="#38bdf8" stroke-width="1.5" />
+      <ellipse cx="25" cy="10" rx="20" ry="6" fill="#0b0f19" stroke="#38bdf8" stroke-width="1.5" />
+      
+      <!-- Cylinder 2 -->
+      <path d="M5,35 A20,6 0 0,0 45,35 V55 A20,6 0 0,1 5,55 Z" fill="#1e293b" stroke="#38bdf8" stroke-width="1.5" />
+      <ellipse cx="25" cy="35" rx="20" ry="6" fill="#0b0f19" stroke="#38bdf8" stroke-width="1.5" />
+
+      <!-- Cylinder 3 -->
+      <path d="M5,60 A20,6 0 0,0 45,60 V80 A20,6 0 0,1 5,80 Z" fill="#1e293b" stroke="#00ffcc" stroke-width="1.5" filter="url(#glow-c)">
+        <animate attributeName="stroke" values="#38bdf8;#00ffcc;#38bdf8" dur="4s" repeatCount="indefinite" />
+      </path>
+      <ellipse cx="25" cy="60" rx="20" ry="6" fill="#0b0f19" stroke="#38bdf8" stroke-width="1.5" />
+
+      <!-- Scanning beam -->
+      <line x1="0" y1="10" x2="50" y2="10" stroke="#00ffcc" stroke-width="2" filter="url(#glow-c)">
+        <animate attributeName="y1" values="10;80;10" dur="3s" repeatCount="indefinite" />
+        <animate attributeName="y2" values="10;80;10" dur="3s" repeatCount="indefinite" />
+      </line>
+    </g>
+
+    <!-- Bottom Status -->
+    <text x="35" y="185" class="server-label">PORT:</text>
+    <text x="75" y="185" class="server-val">1521</text>
+    <circle cx="115" cy="181" r="4" fill="#4ade80" filter="url(#glow-g)" />
+  </g>
+
+  <!-- Right/Center Header Title and Console Terminal -->
+  <g transform="translate(165, 10)">
+    <!-- Main header bar -->
+    <rect width="645" height="42" rx="6" class="panel" />
+    <text x="20" y="29" class="system-title">INVENTORY &amp; SUPPLY CHAIN</text>
+    <text x="390" y="29" class="sub-title">WAREHOUSE DB ENGINE</text>
+
+    <!-- Glowing green active flag -->
+    <g transform="translate(600, 15)">
+      <circle cx="15" cy="6" r="5" fill="#4ade80" filter="url(#glow-g)" />
+      <text x="-40" y="10" font-family="'Orbitron', sans-serif" font-size="9px" fill="#4ade80" font-weight="bold">ACTIVE</text>
+    </g>
+
+    <!-- Console body -->
+    <rect y="52" width="645" height="148" rx="6" class="panel" fill="#04060a" />
+    
+    <!-- Console Title Bar -->
+    <path d="M0,58 Q0,52 6,52 L639,52 Q645,52 645,58 L645,72 L0,72 Z" fill="#0f172a" stroke="#1f2a45" stroke-width="1" />
+    <circle cx="15" cy="62" r="4" fill="#ef4444" />
+    <circle cx="27" cy="62" r="4" fill="#eab308" />
+    <circle cx="39" cy="62" r="4" fill="#22c55e" />
+    <text x="60" y="66" font-family="'Fira Code', monospace" font-size="10px" fill="#64748b">sqlplus - session_id: ora_wms_session</text>
+
+    <!-- Terminal typing simulation -->
+    <g transform="translate(15, 92)">
+      <!-- Line 1 -->
+      <g class="line1">
+        <text x="0" y="0" class="terminal-prompt">SQL&gt;</text>
+        <text x="40" y="0" class="terminal-text">CONNECT wms_user/wms_password@localhost:1521/XEPDB1</text>
+      </g>
+      
+      <!-- Line 2 -->
+      <g class="line2">
+        <text x="0" y="20" class="terminal-success">Connected to Oracle Database 19c Enterprise Edition</text>
+      </g>
+
+      <!-- Line 3 -->
+      <g class="line3">
+        <text x="0" y="40" class="terminal-prompt">SQL&gt;</text>
+        <text x="40" y="40" class="terminal-text">EXEC pkg_stock_movement.receive_stock(p_po_line_id =&gt; 101, ...);</text>
+      </g>
+
+      <!-- Line 4 -->
+      <g class="line4">
+        <text x="0" y="60" class="terminal-success">PL/SQL procedure successfully completed. [Audit ID: seq_stock_transaction.NEXTVAL]</text>
+      </g>
+
+      <!-- Active Prompt / Cursor -->
+      <g>
+        <!-- Offset the cursor animation to start after Line 4 finishes typing (at 4.9s) -->
+        <animate attributeName="transform" type="translate"
+                 values="0,0; 0,20; 0,40; 0,60; 0,80" 
+                 keyTimes="0; 0.36; 0.63; 0.89; 1"
+                 dur="5s" fill="freeze" />
+        
+        <text x="0" y="0" class="terminal-prompt">
+          <animate attributeName="visibility" values="hidden;visible;visible;visible;visible" keyTimes="0;0.1;0.4;0.7;1" dur="5s" fill="freeze" />
+          SQL&gt;<tspan class="cursor">_</tspan>
+        </text>
+      </g>
+    </g>
+  </g>
+</svg>
