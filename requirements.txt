@@ -1,0 +1,1 @@
+# WareTrack WMS utilizes Python standard libraries (sqlite3, json, http.server, urllib).
