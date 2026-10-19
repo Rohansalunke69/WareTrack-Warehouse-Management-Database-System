@@ -19,6 +19,12 @@ class WMSRequestHandler(http.server.SimpleHTTPRequestHandler):
         except TypeError:
             super().__init__(*args, **kwargs)
 
+    def end_headers(self):
+        self.send_header('Cache-Control', 'no-cache, no-store, must-revalidate')
+        self.send_header('Pragma', 'no-cache')
+        self.send_header('Expires', '0')
+        super().end_headers()
+
     def _set_headers(self, status=200, content_type='application/json'):
         self.send_response(status)
         self.send_header('Content-Type', content_type)
@@ -203,9 +209,9 @@ class WMSRequestHandler(http.server.SimpleHTTPRequestHandler):
                     lines = cursor.execute("""
                         SELECT stl.*, p.sku, p.product_name, fl.location_code AS from_location_code, tl.location_code AS to_location_code
                         FROM stock_transfer_line stl
-                        JOIN product p ON p.product_id = stl.product_id
-                        JOIN warehouse_location fl ON fl.location_id = stl.from_location_id
-                        JOIN warehouse_location tl ON tl.location_id = stl.to_location_id
+                        LEFT JOIN product p ON p.product_id = stl.product_id
+                        LEFT JOIN warehouse_location fl ON fl.location_id = stl.from_location_id
+                        LEFT JOIN warehouse_location tl ON tl.location_id = stl.to_location_id
                     """).fetchall()
                     l_map = {}
                     for l in lines:
@@ -307,12 +313,21 @@ class WMSRequestHandler(http.server.SimpleHTTPRequestHandler):
                 self.wfile.write(json.dumps(res).encode())
 
             elif path == '/api/transfer-stock':
-                from_wh = int(data.get('from_warehouse_id'))
-                to_wh = int(data.get('to_warehouse_id'))
-                product_id = int(data.get('product_id'))
-                from_loc = int(data.get('from_location_id'))
-                to_loc = int(data.get('to_location_id'))
-                qty = float(data.get('qty'))
+                try:
+                    product_id = int(data.get('product_id'))
+                    from_wh = int(data.get('from_warehouse_id'))
+                    to_wh = int(data.get('to_warehouse_id'))
+                    from_loc = int(data.get('from_location_id'))
+                    to_loc = int(data.get('to_location_id'))
+                    qty = float(data.get('qty'))
+                except (ValueError, TypeError):
+                    raise ValueError("All transfer fields (Product, From Warehouse, From Location, To Warehouse, To Location, Quantity) are required.")
+
+                if qty <= 0:
+                    raise ValueError("Transfer quantity must be greater than zero.")
+                if from_wh == to_wh and from_loc == to_loc:
+                    raise ValueError("Source and destination bin locations cannot be the same.")
+
                 employee_id = int(data.get('employee_id', 1))
                 notes = data.get('notes', '')
 

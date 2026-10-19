@@ -112,9 +112,9 @@
               <span class="metric-title">Inventory Valuation (Cost)</span>
               <span class="metric-badge positive">+100% Valid</span>
             </div>
-            <div class="metric-value" id="kpi-cost-val">$0.00</div>
+            <div class="metric-value" id="kpi-cost-val">₹0.00</div>
             <div class="metric-footer">
-              <span>Retail Value: <strong id="kpi-retail-val">$0.00</strong></span>
+              <span>Retail Value: <strong id="kpi-retail-val">₹0.00</strong></span>
             </div>
           </div>
 
@@ -602,7 +602,7 @@
   <div class="modal-overlay" id="modal-transfer">
     <div class="modal-card">
       <div class="modal-header">
-        <h3>Inter-Warehouse Stock Transfer</h3>
+        <h3>Stock Transfer & Relocation</h3>
         <button class="modal-close" data-close-modal>&times;</button>
       </div>
       <form id="form-transfer">
@@ -634,6 +634,7 @@
           <div class="form-group">
             <label>Transfer Quantity *</label>
             <input type="number" id="xfer-qty" class="form-input" min="1" step="1" required />
+            <div id="xfer-avail-hint" style="font-size: 0.78rem; margin-top: 5px; font-weight: 500;"></div>
           </div>
           <div class="form-group">
             <label>Authorized Employee *</label>
@@ -655,6 +656,6 @@
   <!-- Toast Notification Container -->
   <div id="toast-container" class="toast-container"></div>
 
-  <script src="app.js"></script>
+  <script src="app.js?v=2"></script>
 </body>
 </html>

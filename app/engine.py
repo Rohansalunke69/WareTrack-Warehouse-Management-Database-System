@@ -282,8 +282,7 @@ def init_db(reset=False):
         requested_by INTEGER REFERENCES employee(employee_id),
         notes TEXT,
         created_at TEXT DEFAULT (datetime('now')),
-        updated_at TEXT DEFAULT (datetime('now')),
-        CHECK (from_warehouse_id <> to_warehouse_id)
+        updated_at TEXT DEFAULT (datetime('now'))
     );
 
     CREATE TABLE IF NOT EXISTS stock_transfer_line (
@@ -768,8 +767,12 @@ class StockMovementEngine:
         conn = get_db_connection()
         try:
             cursor = conn.cursor()
-            xfer_count = cursor.execute("SELECT count(*) as c FROM stock_transfer").fetchone()['c'] + 1
-            xfer_num = f"XFR-2025-{xfer_count:04d}"
+            max_id_row = cursor.execute("SELECT COALESCE(MAX(transfer_id), 0) as m FROM stock_transfer").fetchone()
+            seq_num = (max_id_row['m'] if max_id_row else 0) + 1
+            xfer_num = f"XFR-2025-{seq_num:04d}"
+            while cursor.execute("SELECT 1 FROM stock_transfer WHERE transfer_number = ?", (xfer_num,)).fetchone():
+                seq_num += 1
+                xfer_num = f"XFR-2025-{seq_num:04d}"
 
             cursor.execute("""
                 INSERT INTO stock_transfer (transfer_number, from_warehouse_id, to_warehouse_id, status, requested_by, notes)

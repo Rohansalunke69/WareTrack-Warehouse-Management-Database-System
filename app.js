@@ -41,8 +41,8 @@ function showToast(message, type = 'info') {
 }
 
 // Formatters
-const formatCurrency = (num) => '$' + Number(num || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-const formatNumber = (num) => Number(num || 0).toLocaleString('en-US');
+const formatCurrency = (num) => '₹' + Number(num || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const formatNumber = (num) => Number(num || 0).toLocaleString('en-IN');
 
 // Navigation Tabs
 function initNavigation() {
@@ -95,16 +95,18 @@ function initThemeToggle() {
 // Bootstrap Static Dropdowns
 async function loadBootstrapData() {
   try {
-    const [prodRes, whRes, empRes] = await Promise.all([
+    const [prodRes, whRes, empRes, invRes] = await Promise.all([
       fetch('/api/products').then(r => r.json()),
       fetch('/api/warehouses').then(r => r.json()),
-      fetch('/api/employees').then(r => r.json())
+      fetch('/api/employees').then(r => r.json()),
+      fetch('/api/inventory').then(r => r.json())
     ]);
 
-    AppState.products = prodRes;
+    AppState.products = prodRes || [];
     AppState.warehouses = whRes.warehouses || [];
     AppState.locations = whRes.locations || [];
     AppState.employees = empRes || [];
+    AppState.inventory = invRes || [];
 
     populateDropdowns();
   } catch (err) {
@@ -116,62 +118,169 @@ async function loadBootstrapData() {
 function populateDropdowns() {
   // Populate warehouses in filter
   const whFilter = document.getElementById('inv-wh-filter');
-  whFilter.innerHTML = '<option value="">All Warehouses</option>' + 
-    AppState.warehouses.map(w => `<option value="${w.warehouse_code}">${w.warehouse_code} - ${w.warehouse_name}</option>`).join('');
+  if (whFilter) {
+    whFilter.innerHTML = '<option value="">All Warehouses</option>' + 
+      AppState.warehouses.map(w => `<option value="${w.warehouse_code}">${w.warehouse_code} - ${w.warehouse_name}</option>`).join('');
+  }
 
   // Populate categories in filter
   const categories = [...new Set(AppState.products.map(p => p.category_name))];
   const catFilter = document.getElementById('inv-cat-filter');
-  catFilter.innerHTML = '<option value="">All Categories</option>' +
-    categories.map(c => `<option value="${c}">${c}</option>`).join('');
-
-  // Adjustment Modal Product & Warehouse
-  const adjProd = document.getElementById('adj-product-id');
-  adjProd.innerHTML = AppState.products.map(p => `<option value="${p.product_id}">${p.sku} — ${p.product_name}</option>`).join('');
-
-  const adjWh = document.getElementById('adj-warehouse-id');
-  adjWh.innerHTML = AppState.warehouses.map(w => `<option value="${w.warehouse_id}">${w.warehouse_code} (${w.warehouse_name})</option>`).join('');
-
-  const adjEmp = document.getElementById('adj-employee-id');
-  adjEmp.innerHTML = AppState.employees.map(e => `<option value="${e.employee_id}">${e.employee_code} - ${e.first_name} ${e.last_name} (${e.job_title})</option>`).join('');
-
-  // Update locations on warehouse change
-  adjWh.addEventListener('change', () => updateLocationDropdown(adjWh.value, 'adj-location-id'));
-  if (AppState.warehouses.length > 0) {
-    updateLocationDropdown(AppState.warehouses[0].warehouse_id, 'adj-location-id');
+  if (catFilter) {
+    catFilter.innerHTML = '<option value="">All Categories</option>' +
+      categories.map(c => `<option value="${c}">${c}</option>`).join('');
   }
 
-  // Transfer Modal
+  // Adjustment Modal Product & Warehouse & Employee
+  const adjProd = document.getElementById('adj-product-id');
+  if (adjProd) {
+    adjProd.innerHTML = AppState.products.map(p => `<option value="${p.product_id}">${p.sku} — ${p.product_name}</option>`).join('');
+  }
+
+  const adjWh = document.getElementById('adj-warehouse-id');
+  if (adjWh) {
+    adjWh.innerHTML = AppState.warehouses.map(w => `<option value="${w.warehouse_id}">${w.warehouse_code} (${w.warehouse_name})</option>`).join('');
+    if (adjWh.value) {
+      updateLocationDropdown(adjWh.value, 'adj-location-id');
+    }
+  }
+
+  const adjEmp = document.getElementById('adj-employee-id');
+  if (adjEmp) {
+    adjEmp.innerHTML = AppState.employees.map(e => `<option value="${e.employee_id}">${e.employee_code} - ${e.first_name} ${e.last_name} (${e.job_title})</option>`).join('');
+  }
+
+  // Transfer Modal Dropdowns
   const xferProd = document.getElementById('xfer-product-id');
-  xferProd.innerHTML = AppState.products.map(p => `<option value="${p.product_id}">${p.sku} — ${p.product_name}</option>`).join('');
+  if (xferProd) {
+    xferProd.innerHTML = AppState.products.map(p => `<option value="${p.product_id}">${p.sku} — ${p.product_name}</option>`).join('');
+  }
 
   const xferFromWh = document.getElementById('xfer-from-wh');
   const xferToWh = document.getElementById('xfer-to-wh');
-  xferFromWh.innerHTML = AppState.warehouses.map(w => `<option value="${w.warehouse_id}">${w.warehouse_code} (${w.warehouse_name})</option>`).join('');
-  xferToWh.innerHTML = AppState.warehouses.map(w => `<option value="${w.warehouse_id}">${w.warehouse_code} (${w.warehouse_name})</option>`).join('');
+  if (xferFromWh && xferToWh) {
+    xferFromWh.innerHTML = AppState.warehouses.map(w => `<option value="${w.warehouse_id}">${w.warehouse_code} (${w.warehouse_name})</option>`).join('');
+    xferToWh.innerHTML = AppState.warehouses.map(w => `<option value="${w.warehouse_id}">${w.warehouse_code} (${w.warehouse_name})</option>`).join('');
 
-  xferFromWh.addEventListener('change', () => updateLocationDropdown(xferFromWh.value, 'xfer-from-loc'));
-  xferToWh.addEventListener('change', () => updateLocationDropdown(xferToWh.value, 'xfer-to-loc'));
-
-  if (AppState.warehouses.length > 1) {
-    xferToWh.selectedIndex = 1;
-  }
-  if (AppState.warehouses.length > 0) {
-    updateLocationDropdown(xferFromWh.value, 'xfer-from-loc');
-    updateLocationDropdown(xferToWh.value, 'xfer-to-loc');
+    if (AppState.warehouses.length > 1) {
+      xferToWh.selectedIndex = 1;
+    }
+    updateTransferSource();
+    updateTransferDestination();
   }
 
   const xferEmp = document.getElementById('xfer-employee-id');
-  xferEmp.innerHTML = AppState.employees.map(e => `<option value="${e.employee_id}">${e.employee_code} - ${e.first_name} ${e.last_name}</option>`).join('');
+  if (xferEmp) {
+    xferEmp.innerHTML = AppState.employees.map(e => `<option value="${e.employee_id}">${e.employee_code} - ${e.first_name} ${e.last_name}</option>`).join('');
+  }
 }
 
 function updateLocationDropdown(warehouseId, targetElementId) {
   const locDropdown = document.getElementById(targetElementId);
+  if (!locDropdown) return;
   const filteredLocs = AppState.locations.filter(l => l.warehouse_id == warehouseId);
   if (filteredLocs.length === 0) {
     locDropdown.innerHTML = '<option value="">No locations available</option>';
   } else {
     locDropdown.innerHTML = filteredLocs.map(l => `<option value="${l.location_id}">${l.location_code} (${l.zone_type})</option>`).join('');
+  }
+}
+
+// Smart stock-aware location updater for Transfer Modal
+function updateTransferSource() {
+  const prodSelect = document.getElementById('xfer-product-id');
+  const fromWhSelect = document.getElementById('xfer-from-wh');
+  const fromLocSelect = document.getElementById('xfer-from-loc');
+  const hint = document.getElementById('xfer-avail-hint');
+  const qtyInput = document.getElementById('xfer-qty');
+
+  if (!prodSelect || !fromWhSelect || !fromLocSelect) return;
+
+  const prodId = prodSelect.value;
+  const fromWh = fromWhSelect.value;
+  const whLocs = AppState.locations.filter(l => l.warehouse_id == fromWh);
+
+  if (whLocs.length === 0) {
+    fromLocSelect.innerHTML = '<option value="">No locations in warehouse</option>';
+    if (hint) { hint.textContent = 'No locations in selected warehouse'; hint.style.color = 'var(--accent-danger)'; }
+    if (qtyInput) qtyInput.max = 0;
+    return;
+  }
+
+  let preferredLocId = null;
+  let maxAvail = -1;
+
+  fromLocSelect.innerHTML = whLocs.map(l => {
+    const inv = AppState.inventory.find(i => String(i.product_id) === String(prodId) && String(i.warehouse_id) === String(fromWh) && String(i.location_id) === String(l.location_id));
+    const avail = inv ? Math.max(0, (inv.qty_on_hand || 0) - (inv.qty_reserved || 0)) : 0;
+    if (avail > maxAvail && avail > 0) {
+      maxAvail = avail;
+      preferredLocId = l.location_id;
+    }
+    const label = `${l.location_code} (${l.zone_type}) — Avail: ${avail}`;
+    return `<option value="${l.location_id}" data-avail="${avail}">${label}</option>`;
+  }).join('');
+
+  if (preferredLocId) {
+    fromLocSelect.value = preferredLocId;
+  }
+
+  refreshTransferStockHint();
+}
+
+function refreshTransferStockHint() {
+  const fromLocSelect = document.getElementById('xfer-from-loc');
+  const qtyInput = document.getElementById('xfer-qty');
+  const hint = document.getElementById('xfer-avail-hint');
+  if (!fromLocSelect) return;
+
+  const selectedOpt = fromLocSelect.options[fromLocSelect.selectedIndex];
+  const avail = selectedOpt ? parseFloat(selectedOpt.getAttribute('data-avail') || '0') : 0;
+
+  if (qtyInput) {
+    qtyInput.max = avail > 0 ? avail : 0;
+    if (avail > 0 && (!qtyInput.value || parseFloat(qtyInput.value) > avail || parseFloat(qtyInput.value) <= 0)) {
+      qtyInput.value = Math.min(avail, Math.max(1, qtyInput.value ? parseFloat(qtyInput.value) : 1));
+    }
+  }
+
+  if (hint) {
+    if (avail > 0) {
+      hint.textContent = `✓ Available at source bin: ${avail} units`;
+      hint.style.color = 'var(--accent-success)';
+    } else {
+      hint.textContent = `⚠ Zero stock available at this source bin for the selected product`;
+      hint.style.color = 'var(--accent-danger)';
+    }
+  }
+}
+
+function updateTransferDestination() {
+  const toWhSelect = document.getElementById('xfer-to-wh');
+  const toLocSelect = document.getElementById('xfer-to-loc');
+  const fromWhSelect = document.getElementById('xfer-from-wh');
+  const fromLocSelect = document.getElementById('xfer-from-loc');
+
+  if (!toWhSelect || !toLocSelect) return;
+
+  const toWh = toWhSelect.value;
+  const fromWh = fromWhSelect ? fromWhSelect.value : null;
+  const fromLoc = fromLocSelect ? fromLocSelect.value : null;
+  const whLocs = AppState.locations.filter(l => l.warehouse_id == toWh);
+
+  if (whLocs.length === 0) {
+    toLocSelect.innerHTML = '<option value="">No locations available</option>';
+    return;
+  }
+
+  toLocSelect.innerHTML = whLocs.map(l => `<option value="${l.location_id}">${l.location_code} (${l.zone_type})</option>`).join('');
+
+  // If in the same warehouse, ensure toLoc is not the same as fromLoc
+  if (fromWh && String(fromWh) === String(toWh) && whLocs.length > 1) {
+    const diffLoc = whLocs.find(l => String(l.location_id) !== String(fromLoc));
+    if (diffLoc) {
+      toLocSelect.value = diffLoc.location_id;
+    }
   }
 }
 
@@ -310,7 +419,10 @@ function renderFilteredInventory() {
       <td>${formatCurrency(item.unit_cost)}</td>
       <td>${formatCurrency(item.stock_value)}</td>
       <td>
-        <button class="btn btn-sm btn-secondary" onclick="openQuickAdjust(${item.product_id}, ${item.warehouse_id}, ${item.location_id})">Adjust</button>
+        <div style="display:flex; gap:6px;">
+          <button class="btn btn-sm btn-secondary" onclick="openQuickAdjust(${item.product_id}, ${item.warehouse_id}, ${item.location_id})">Adjust</button>
+          <button class="btn btn-sm btn-primary" onclick="openTransferModal(${item.product_id}, ${item.warehouse_id}, ${item.location_id})">Transfer</button>
+        </div>
       </td>
     </tr>
   `).join('');
@@ -427,25 +539,41 @@ async function loadTransfers() {
   try {
     const xfers = await fetch('/api/transfers').then(r => r.json());
     const tbody = document.getElementById('transfer-table-body');
-    if (xfers.length === 0) {
+    if (!tbody) return;
+
+    if (!Array.isArray(xfers) || xfers.length === 0) {
       tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">No stock transfers executed</td></tr>';
       return;
     }
 
-    tbody.innerHTML = xfers.map(x => `
-      <tr>
-        <td><strong>${x.transfer_number}</strong></td>
-        <td><span class="badge badge-info">${x.from_warehouse_code}</span></td>
-        <td><span class="badge badge-purple">${x.to_warehouse_code}</span></td>
-        <td><span class="badge badge-success">${x.status}</span></td>
-        <td>${x.request_date}</td>
-        <td>
-          ${x.lines.map(l => `<code>${l.sku}</code> (${l.qty_requested} units: ${l.from_location_code} &rarr; ${l.to_location_code})`).join('<br>')}
-        </td>
-      </tr>
-    `).join('');
+    const statusBadge = {
+      COMPLETED: 'badge-success',
+      REQUESTED: 'badge-warning',
+      IN_TRANSIT: 'badge-info',
+      CANCELLED: 'badge-danger'
+    };
+
+    tbody.innerHTML = xfers.map(x => {
+      const badgeClass = statusBadge[x.status] || 'badge-info';
+      const linesHtml = (x.lines && Array.isArray(x.lines) && x.lines.length > 0)
+        ? x.lines.map(l => `<code>${l.sku}</code> (${l.qty_requested} units: ${l.from_location_code || 'Bin ' + l.from_location_id} &rarr; ${l.to_location_code || 'Bin ' + l.to_location_id})`).join('<br>')
+        : '<span class="text-muted">Direct Relocation</span>';
+
+      return `
+        <tr>
+          <td><strong>${x.transfer_number}</strong></td>
+          <td><span class="badge badge-info">${x.from_warehouse_code}</span></td>
+          <td><span class="badge badge-purple">${x.to_warehouse_code}</span></td>
+          <td><span class="badge ${badgeClass}">${x.status}</span></td>
+          <td>${x.request_date || '-'}</td>
+          <td>${linesHtml}</td>
+        </tr>
+      `;
+    }).join('');
   } catch (err) {
     console.error('Failed to load transfers', err);
+    const tbody = document.getElementById('transfer-table-body');
+    if (tbody) tbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted">Failed to load transfers: ${err.message}</td></tr>`;
   }
 }
 
@@ -509,13 +637,49 @@ function initModals() {
     document.getElementById('modal-adjust').classList.add('open');
   });
 
-  // Open Transfer Modal
+  // Adjust Modal warehouse change
+  const adjWh = document.getElementById('adj-warehouse-id');
+  if (adjWh) {
+    adjWh.addEventListener('change', () => updateLocationDropdown(adjWh.value, 'adj-location-id'));
+  }
+
+  // Open Transfer Modal buttons
   document.getElementById('btn-open-transfer-modal').addEventListener('click', () => {
-    document.getElementById('modal-transfer').classList.add('open');
+    openTransferModal();
   });
   document.getElementById('btn-open-transfer-modal-2').addEventListener('click', () => {
-    document.getElementById('modal-transfer').classList.add('open');
+    openTransferModal();
   });
+
+  // Transfer Modal change listeners (registered once)
+  const xferProd = document.getElementById('xfer-product-id');
+  const xferFromWh = document.getElementById('xfer-from-wh');
+  const xferFromLoc = document.getElementById('xfer-from-loc');
+  const xferToWh = document.getElementById('xfer-to-wh');
+
+  if (xferProd) {
+    xferProd.addEventListener('change', () => {
+      updateTransferSource();
+      updateTransferDestination();
+    });
+  }
+  if (xferFromWh) {
+    xferFromWh.addEventListener('change', () => {
+      updateTransferSource();
+      updateTransferDestination();
+    });
+  }
+  if (xferFromLoc) {
+    xferFromLoc.addEventListener('change', () => {
+      refreshTransferStockHint();
+      updateTransferDestination();
+    });
+  }
+  if (xferToWh) {
+    xferToWh.addEventListener('change', () => {
+      updateTransferDestination();
+    });
+  }
 
   // Form: Receive Stock
   document.getElementById('form-receive').addEventListener('submit', async (e) => {
@@ -606,9 +770,43 @@ function initModals() {
     const to_warehouse_id = document.getElementById('xfer-to-wh').value;
     const from_location_id = document.getElementById('xfer-from-loc').value;
     const to_location_id = document.getElementById('xfer-to-loc').value;
-    const qty = document.getElementById('xfer-qty').value;
+    const qty = parseFloat(document.getElementById('xfer-qty').value);
     const employee_id = document.getElementById('xfer-employee-id').value;
     const notes = document.getElementById('xfer-notes').value;
+
+    if (!from_location_id || !to_location_id) {
+      showToast('Please select valid source and destination bin locations.', 'error');
+      return;
+    }
+
+    if (from_warehouse_id === to_warehouse_id && from_location_id === to_location_id) {
+      showToast('Source and destination bin locations cannot be the same.', 'error');
+      return;
+    }
+
+    if (isNaN(qty) || qty <= 0) {
+      showToast('Transfer quantity must be greater than zero.', 'error');
+      return;
+    }
+
+    // Validate available stock
+    const srcLocSelect = document.getElementById('xfer-from-loc');
+    const selectedOpt = srcLocSelect.options[srcLocSelect.selectedIndex];
+    const avail = selectedOpt ? parseFloat(selectedOpt.getAttribute('data-avail') || '0') : 0;
+    if (avail <= 0) {
+      showToast('Cannot transfer: Selected source bin has 0 available units for this product.', 'error');
+      return;
+    }
+    if (qty > avail) {
+      showToast(`Cannot transfer ${qty} units: Only ${avail} units available in source bin.`, 'error');
+      return;
+    }
+
+    const submitBtn = e.target.querySelector('button[type="submit"]');
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Transferring...';
+    }
 
     try {
       const res = await fetch('/api/transfer-stock', {
@@ -622,9 +820,18 @@ function initModals() {
       showToast(`Transfer ${res.transfer_number} completed for ${qty} units!`, 'success');
       document.getElementById('modal-transfer').classList.remove('open');
       document.getElementById('form-transfer').reset();
-      loadBootstrapData().then(() => refreshCurrentTab());
+      await loadBootstrapData();
+      refreshCurrentTab();
+      if (AppState.activeTab === 'transfers') {
+        loadTransfers();
+      }
     } catch (err) {
       showToast(err.message, 'error');
+    } finally {
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Execute Transfer';
+      }
     }
   });
 }
@@ -674,6 +881,43 @@ window.openQuickAdjust = function(productId, warehouseId, locationId) {
   document.getElementById('adj-warehouse-id').value = warehouseId;
   updateLocationDropdown(warehouseId, 'adj-location-id');
   document.getElementById('adj-location-id').value = locationId;
+  modal.classList.add('open');
+};
+
+window.openTransferModal = function(productId, fromWarehouseId, fromLocationId) {
+  const modal = document.getElementById('modal-transfer');
+  if (!modal) return;
+
+  const prodSelect = document.getElementById('xfer-product-id');
+  const fromWhSelect = document.getElementById('xfer-from-wh');
+  const toWhSelect = document.getElementById('xfer-to-wh');
+  const fromLocSelect = document.getElementById('xfer-from-loc');
+  const qtyInput = document.getElementById('xfer-qty');
+  const notesInput = document.getElementById('xfer-notes');
+
+  if (qtyInput) qtyInput.value = '1';
+  if (notesInput) notesInput.value = '';
+
+  if (productId && prodSelect) prodSelect.value = productId;
+  if (fromWarehouseId && fromWhSelect) fromWhSelect.value = fromWarehouseId;
+
+  // By default, set destination warehouse to a different warehouse if multiple exist
+  if (toWhSelect && fromWhSelect) {
+    if (AppState.warehouses.length > 1) {
+      const otherWh = AppState.warehouses.find(w => String(w.warehouse_id) !== String(fromWhSelect.value));
+      if (otherWh) toWhSelect.value = otherWh.warehouse_id;
+    } else {
+      toWhSelect.value = fromWhSelect.value;
+    }
+  }
+
+  updateTransferSource();
+  if (fromLocationId && fromLocSelect) {
+    fromLocSelect.value = fromLocationId;
+    refreshTransferStockHint();
+  }
+  updateTransferDestination();
+
   modal.classList.add('open');
 };
 
